@@ -42,4 +42,74 @@ Note also that you will not have to define these variables "by hand".  The EEPRO
 ###Declaring the variables
 Use the **EEPROMstate** or **EEPROMstate2** macros to list the variables.  For these, the crucial parameter is the **type** and the **name** parameters:
 ```c++
-EEPROMstate(_offset_, 
+EEPROMstate (offset, type, name,         value)
+EEPROMstate2(offset, type, name, format, value)
+```
+The usage is as follows:
+```c++
+class Whatever {
+    class MyEEPROMdata {
+    #define EEPROM_VARIABLE_DECLARATION
+    #include "EEPROMstate.h"
+    } eeprom; // class MyEEPROMPdata
+    ...
+    }; // class Whatever
+```
+I have assumed that the collection of EEPROM data is going to be a member of the **Whatever** class.  I do hardwire the name **eeprom** into some of the macros, so that name is required.
+
+By defining **EEPROM_VARIABLE_DECLARATION**, the result of this becomes
+    ```
+    class Whatever {
+    class MyEEPROMdata {
+         uint32_t Signature;
+         uint16_t Version;
+         bool Debugging;
+         } eeprom; // class MyEEPROMdata
+    ```
+
+Note that because there is no explicit visibility specified, the default visibility **protected:** is assumed.  Therefore, there is no way to set or examine these values.  We have to implement setter and getter methods for this class.  This is done by defining the symbols **EEPROM_SET_DECLARATION** and **EEPROM_GET_DECLARATION**:
+```c++
+    class MyEEPROMdata {
+    #define EEPROM_VARIABLE_DECLARATION
+    // from EEPROM_VARIABLE_DECLARATION
+    #include "EEPROMstate.h"
+    
+    #define EEPROM_SET_DECLARATION
+    // from EEPROM_SET_DECLARATION
+    #include "EEPROMstate.h"
+    
+    // from EEPROM_GET_DECLARATION
+    #define EEPROM_GET_DECLARATION
+    #include "EEPROMstate.h"
+        } eeprom; // class MyEEPROMPdata
+  ```     
+  Ater macro expansions, the class looks like this:
+  ```c++
+      class MyEEPROMdata {
+         // from EEPROM_VARIABLE_DECLARATION
+         uint32_t Signature;
+         uint16_t Version;
+         bool Debugging;
+         
+         // from EEPROM_SET_DECLARATION
+         public: inline void setSignature(uint32_t val) { Signature = val; }
+         public: inline void setVersion(uint16_t val) { Version = val; }
+         public: inline void setDebugging(bool val) { Debugging = val; }
+         
+         // from EEPROM_GET_DECLARATION
+         public: inline uint32_t getSignature() { return Signature; }
+         public: inline uint16_t getVersion() { return Version; }
+         public: inline bool getDebugging() { return Debugging; }
+          
+         } eeprom; // class MyEEPROMdata
+ ```
+
+Parameter | Meaning 
+--------- | ------- 
+offset    | _reserved for future use_
+type      |  The type of the value (declarations, setters & getters)
+name      |  The name of the variable (declarations, setters & getters, debug printing
+mode      | The formatting mode.  For integers, this can be **DEC**, **OCT** or **HEX**, for **float** and **double** values, it is the number of decimal places
+value     | The value to be used as the default value (initialization)
+    
+    
